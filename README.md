@@ -2,6 +2,9 @@
 
 An intense cursor-based combat arena game with endless waves, diverse enemies, and explosive action!
 
+![image alt](https://github.com/Yasas-Sri/Battle-cursor/blob/d03e4c68de588865bfa7f1d064b723f5db25f931/Screenshot%20from%202025-12-04%2020-32-09.png) 
+![image alt](https://github.com/Yasas-Sri/Battle-cursor/blob/d03e4c68de588865bfa7f1d064b723f5db25f931/Screenshot%20from%202025-12-04%2020-32-45.png)
+
 ## Features
 
 ### Core Combat System
