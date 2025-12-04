@@ -13,18 +13,18 @@ An intense cursor-based combat arena game with endless waves, diverse enemies, a
   - **Multi-Shot**: Power-up that fires 3 bullets in a spread
   - **Bullet Bouncing**: Shots ricochet off walls
 - **Tactical Abilities**:
-  - ⚡**Dash**: Right-click for quick dodges with invulnerability
+  - **Dash**: Right-click for quick dodges with invulnerability
   - **Wall Placement**: Click and drag to create defensive barriers
   - **Shield**: Absorbs damage when activated
 
 ### Enemy Types
 
-- **Normal** ●: Balanced enemies
-- **Sniper** ◆: Long-range attackers that keep distance
-- **Tank** ■: High health, slow but deadly
-- **Splitter** ◐: Divides into smaller enemies on death
-- **Kamikaze** ★: Explodes on contact, damaging nearby foes
-- **Support** ♦: Heals other enemies
+- **Normal** : Balanced enemies
+- **Sniper** : Long-range attackers that keep distance
+- **Tank** : High health, slow but deadly
+- **Splitter** : Divides into smaller enemies on death
+- **Kamikaze** : Explodes on contact, damaging nearby foes
+- **Support** : Heals other enemies
 - **Boss** : Powerful multi-phase enemies every 10 kills
 
 ### Power-Up System
@@ -58,7 +58,7 @@ An intense cursor-based combat arena game with endless waves, diverse enemies, a
 2. Click "Start Game"
 3. Survive and defeat as many enemies as you can!
 
-## 🎮 Controls
+##  Controls
 
 - **W/A/S/D**: Move your cursor
 - **Left Click**: Quick shoot
@@ -98,13 +98,6 @@ Battle Cursor/
 - **Cooldown**: 4 seconds
 - Blocks projectiles but not players
 
-### Power-ups
-
-- **Speed Boost**: Increases movement speed
-- **Rapid Fire**: Doubles fire rate
-- **Explosive Shot**: (Coming soon)
-- **Shield**: (Coming soon)
-
 ### Enemies
 
 - Spawn continuously throughout the match
@@ -127,20 +120,3 @@ Battle Cursor/
 - 60 FPS game loop
 - Efficient collision detection
 - Responsive design
-
-## Future Enhancements
-
-- [ ] More power-up types
-- [ ] Different arena layouts
-- [ ] Custom cursor skins
-- [ ] Sound effects and music
-- [ ] Mobile touch controls
-- [ ] High score tracking
-
-## Game Tips
-
-1. **Use walls strategically** to block enemy fire and create choke points
-2. **Time your dashes** to avoid projectiles at the last moment
-3. **Keep moving** - standing still makes you an easy target
-4. **Collect power-ups** when safe - they can turn the tide of battle
-5. **Corner enemies** with walls for easy eliminations
