@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Cursor - Arena Combat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="menu-screen" class="screen active">
+            <h1 class="neon-text">BATTLE CURSOR</h1>
+            <p class="subtitle">Fast-Paced Cursor Combat Arena</p>
+            
+            <div class="difficulty-selector">
+                <h3>Select Difficulty</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn active" data-difficulty="easy">
+                        <span class="difficulty-label">Easy</span>
+                        <span class="difficulty-desc">More health, slower enemies</span>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="medium">
+                        <span class="difficulty-label">Medium</span>
+                        <span class="difficulty-desc">Balanced gameplay</span>
+                    </button>
+                    <button class="difficulty-btn" data-difficulty="hard">
+                        <span class="difficulty-label">Hard</span>
+                        <span class="difficulty-desc">Fast enemies, less health</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-buttons">
+                <button id="start-solo" class="game-button">Start Game</button>
+            </div>
+
+            <div class="menu-layout">
+                <div class="controls-info">
+                    <h3>Controls</h3>
+                    <p> Move: WASD / Arrow Keys</p>
+                    <p> Shoot: Left Click</p>
+                    <p>Charge Shot: Hold Left Click</p>
+                    <p> Dash: Right Click</p>
+                    <p> Wall: Click + Drag</p>
+                </div>
+
+                <div class="high-scores-panel">
+                    <h3>🏆 High Scores</h3>
+                    <div id="menu-high-scores">
+                        <p class="no-scores">No scores yet. Play to set a record!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div id="hud">
+                <div class="hud-row">
+                    <div class="hud-item">
+                        <span class="label">HP:</span>
+                        <div id="health-bar">
+                            <div id="health-fill"></div>
+                        </div>
+                    </div>
+                    <div class="hud-item">
+                        <span class="label">Score:</span>
+                        <span id="score">0</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="label">Time:</span>
+                        <span id="timer">0</span>s
+                    </div>
+                </div>
+                <div class="hud-row">
+                    <div class="hud-item">
+                        <span class="label">Wave:</span>
+                        <span id="wave">1</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="label">Kills:</span>
+                        <span id="kills">0</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="label">Combo:</span>
+                        <span id="combo">-</span>
+                    </div>
+                </div>
+                <div class="hud-row">
+                    <div class="hud-item cooldown-indicator" id="dash-cooldown">
+                        <span>⚡ Dash Ready</span>
+                    </div>
+                    <div class="hud-item cooldown-indicator" id="wall-cooldown">
+                        <span>🧱 Wall Ready</span>
+                    </div>
+                </div>
+            </div>
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <div id="game-over-screen" class="screen">
+            <h2 class="neon-text">GAME OVER</h2>
+            <div id="final-stats">
+                <p>Final Score: <span id="final-score" class="stat-value">0</span></p>
+                <p>Enemies Defeated: <span id="enemies-defeated" class="stat-value">0</span></p>
+                <p>Time Survived: <span id="time-survived" class="stat-value">0</span>s</p>
+                <p>Wave Reached: <span id="final-wave" class="stat-value">1</span></p>
+                <p>Max Combo: <span id="max-combo" class="stat-value">0</span>x</p>
+            </div>
+            <button id="restart-button" class="game-button">Play Again</button>
+            <button id="menu-button" class="game-button secondary">Main Menu</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
