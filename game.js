@@ -58,24 +58,27 @@ const CONFIG = {
     difficulty: {
         easy: {
             playerHealth: 50,
-            enemySpeedMultiplier: 0.2,
+            enemySpeedMultiplier: 0.5,
             enemyHealthMultiplier: 0.3,
             spawnRateMultiplier: 1.5,
-            damageMultiplier: 0.3
+            damageMultiplier: 0.3,
+            enemyProjectileSpeed: 0.4
         },
         medium: {
             playerHealth: 20,
             enemySpeedMultiplier: 0.8,
             enemyHealthMultiplier: 0.8,
             spawnRateMultiplier: 1.0,
-            damageMultiplier: 0.8
+            damageMultiplier: 0.8,
+            enemyProjectileSpeed: 0.6
         },
         hard: {
             playerHealth: 10,
             enemySpeedMultiplier: 1.3,
             enemyHealthMultiplier: 1.2,
             spawnRateMultiplier: 0.7,
-            damageMultiplier: 1.5
+            damageMultiplier: 1.5,
+            enemyProjectileSpeed: 0.85
         }
     }
 };
@@ -376,11 +379,12 @@ class Player {
 }
 
 class Projectile {
-    constructor(x, y, angle, color, isPlayer = false, damage = 1) {
+    constructor(x, y, angle, color, isPlayer = false, damage = 1, enemySpeedMultiplier = 0.6) {
         this.x = x;
         this.y = y;
         this.radius = CONFIG.projectile.radius * (damage > 1 ? 1.5 : 1);
-        this.speed = CONFIG.projectile.speed;
+        // Enemy projectiles are slower than player projectiles
+        this.speed = isPlayer ? CONFIG.projectile.speed : CONFIG.projectile.speed * enemySpeedMultiplier;
         this.velocityX = Math.cos(angle) * this.speed;
         this.velocityY = Math.sin(angle) * this.speed;
         this.color = color;
@@ -565,14 +569,14 @@ class Enemy {
         this.shootCooldown--;
     }
 
-    shoot(player) {
+    shoot(player, speedMultiplier = 0.6) {
         if (this.type !== 'sniper' && this.type !== 'normal') return null;
         
         const shootInterval = this.type === 'sniper' ? 90 : 60;
         if (this.shootCooldown <= 0) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
             this.shootCooldown = shootInterval;
-            return new Projectile(this.x, this.y, angle, this.color, false);
+            return new Projectile(this.x, this.y, angle, this.color, false, 1, speedMultiplier);
         }
         return null;
     }
@@ -705,7 +709,7 @@ class Boss extends Enemy {
         }
     }
 
-    shoot(player) {
+    shoot(player, speedMultiplier = 0.6) {
         if (this.attackCooldown > 0) return [];
         
         const projectiles = [];
@@ -715,7 +719,7 @@ class Boss extends Enemy {
             const baseAngle = Math.atan2(player.y - this.y, player.x - this.x);
             const spread = (Math.PI / 4) * this.phase;
             const angle = baseAngle + (i - bulletCount / 2) * (spread / bulletCount);
-            projectiles.push(new Projectile(this.x, this.y, angle, this.color, false, 2));
+            projectiles.push(new Projectile(this.x, this.y, angle, this.color, false, 2, speedMultiplier));
         }
         
         return projectiles;
@@ -882,8 +886,10 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = CONFIG.canvas.width;
-        this.canvas.height = CONFIG.canvas.height;
+        
+        // Set canvas size based on screen size
+        this.setupCanvas();
+        window.addEventListener('resize', () => this.setupCanvas());
 
         this.state = 'menu'; // menu, playing, gameover
         this.player = null;
@@ -917,6 +923,29 @@ class Game {
         this.setupEventListeners();
         this.setupUI();
         this.displayHighScores(); // Show scores on initial load
+    }
+
+    setupCanvas() {
+        // Check if mobile
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // Use full screen on mobile
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+            CONFIG.canvas.width = window.innerWidth;
+            CONFIG.canvas.height = window.innerHeight;
+        } else {
+            // Use default size on desktop
+            this.canvas.width = 1200;
+            this.canvas.height = 800;
+            this.canvas.style.width = '1200px';
+            this.canvas.style.height = '800px';
+            CONFIG.canvas.width = 1200;
+            CONFIG.canvas.height = 800;
+        }
     }
 
     loadHighScores() {
@@ -1371,11 +1400,12 @@ class Game {
                 enemy.update(this.player, this.enemies);
 
                 // Enemy shooting
+                const diffSettings = CONFIG.difficulty[this.difficulty];
                 if (enemy instanceof Boss) {
-                    const bossProjectiles = enemy.shoot(this.player);
+                    const bossProjectiles = enemy.shoot(this.player, diffSettings.enemyProjectileSpeed);
                     this.projectiles.push(...bossProjectiles);
                 } else {
-                    const projectile = enemy.shoot(this.player);
+                    const projectile = enemy.shoot(this.player, diffSettings.enemyProjectileSpeed);
                     if (projectile) this.projectiles.push(projectile);
                 }
 
