@@ -57,21 +57,21 @@ const CONFIG = {
     },
     difficulty: {
         easy: {
-            playerHealth: 7,
-            enemySpeedMultiplier: 0.7,
-            enemyHealthMultiplier: 0.8,
-            spawnRateMultiplier: 1.3,
-            damageMultiplier: 0.8
+            playerHealth: 50,
+            enemySpeedMultiplier: 0.2,
+            enemyHealthMultiplier: 0.3,
+            spawnRateMultiplier: 1.5,
+            damageMultiplier: 0.3
         },
         medium: {
-            playerHealth: 5,
-            enemySpeedMultiplier: 1.0,
-            enemyHealthMultiplier: 1.0,
+            playerHealth: 20,
+            enemySpeedMultiplier: 0.8,
+            enemyHealthMultiplier: 0.8,
             spawnRateMultiplier: 1.0,
-            damageMultiplier: 1.0
+            damageMultiplier: 0.8
         },
         hard: {
-            playerHealth: 3,
+            playerHealth: 10,
             enemySpeedMultiplier: 1.3,
             enemyHealthMultiplier: 1.2,
             spawnRateMultiplier: 0.7,
@@ -145,15 +145,22 @@ class Player {
         this.lastKillTime = 0;
     }
 
-    move(keys) {
+    move(keys, touchMovement = null) {
         // WASD and Arrow keys movement
         let moveX = 0;
         let moveY = 0;
 
-        if (keys['w'] || keys['W'] || keys['ArrowUp']) moveY -= 1;
-        if (keys['s'] || keys['S'] || keys['ArrowDown']) moveY += 1;
-        if (keys['a'] || keys['A'] || keys['ArrowLeft']) moveX -= 1;
-        if (keys['d'] || keys['D'] || keys['ArrowRight']) moveX += 1;
+        // Touch movement (takes priority)
+        if (touchMovement) {
+            moveX = touchMovement.x;
+            moveY = touchMovement.y;
+        } else {
+            // Keyboard movement
+            if (keys['w'] || keys['W'] || keys['ArrowUp']) moveY -= 1;
+            if (keys['s'] || keys['S'] || keys['ArrowDown']) moveY += 1;
+            if (keys['a'] || keys['A'] || keys['ArrowLeft']) moveX -= 1;
+            if (keys['d'] || keys['D'] || keys['ArrowRight']) moveX += 1;
+        }
 
         // Normalize diagonal movement
         if (moveX !== 0 && moveY !== 0) {
@@ -775,6 +782,43 @@ class DamageNumber {
     }
 }
 
+class PowerupNotification {
+    constructor(name, color) {
+        this.name = name;
+        this.color = color;
+        this.life = 120; // 2 seconds
+        this.maxLife = this.life;
+        this.active = true;
+        this.y = 150; // Start position
+    }
+
+    update() {
+        this.life--;
+        if (this.life <= 0) this.active = false;
+    }
+
+    draw(ctx) {
+        const alpha = Math.min(this.life / 30, 1); // Fade in first 0.5s, then fade out
+        const fadeAlpha = this.life < 30 ? this.life / 30 : 1;
+        
+        // Draw background
+        ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha * 0.7})`;
+        ctx.fillRect(CONFIG.canvas.width / 2 - 150, this.y - 20, 300, 50);
+        
+        // Draw border
+        ctx.strokeStyle = this.color + Math.floor(fadeAlpha * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 3;
+        ctx.strokeRect(CONFIG.canvas.width / 2 - 150, this.y - 20, 300, 50);
+        
+        // Draw text
+        ctx.fillStyle = this.color + Math.floor(fadeAlpha * 255).toString(16).padStart(2, '0');
+        ctx.font = 'bold 20px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`⚡ ${this.name.toUpperCase()} ⚡`, CONFIG.canvas.width / 2, this.y);
+    }
+}
+
 class Powerup {
     constructor(x, y, type) {
         this.x = x;
@@ -790,7 +834,8 @@ class Powerup {
             shield: { color: '#ffff00', symbol: '🛡️', name: 'Shield' },
             multishot: { color: '#ff00ff', symbol: '✴️', name: 'Multi-Shot' },
             slowmo: { color: '#00ffff', symbol: '⏱️', name: 'Slow Motion' },
-            magnet: { color: '#ff8800', symbol: '🧲', name: 'Magnet' }
+            magnet: { color: '#ff8800', symbol: '🧲', name: 'Magnet' },
+            health: { color: '#ff0000', symbol: '❤️', name: 'Health Pack' }
         };
 
         this.data = types[type] || types.speed;
@@ -851,6 +896,10 @@ class Game {
         this.keys = {};
         this.mouse = { x: 0, y: 0, down: false, rightDown: false };
         this.dragStart = null;
+        this.touches = {};
+        this.movementTouch = null;
+        this.aimTouch = null;
+        this.powerupNotifications = [];
         this.score = 0;
         this.enemiesDefeated = 0;
         this.timeElapsed = 0;
@@ -964,6 +1013,98 @@ class Game {
                 if (dashed) this.updateDashCooldown();
             }
         });
+
+        // Touch controls for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            
+            for (let touch of e.changedTouches) {
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                // Left side for movement, right side for aiming/shooting
+                if (touchX < CONFIG.canvas.width / 2) {
+                    this.movementTouch = {
+                        id: touch.identifier,
+                        startX: touchX,
+                        startY: touchY,
+                        currentX: touchX,
+                        currentY: touchY
+                    };
+                } else {
+                    this.aimTouch = {
+                        id: touch.identifier,
+                        x: touchX,
+                        y: touchY
+                    };
+                    this.mouse.x = touchX;
+                    this.mouse.y = touchY;
+                    this.mouse.down = true;
+                    this.dragStart = { x: touchX, y: touchY };
+                    if (this.player) {
+                        this.player.startCharging();
+                    }
+                }
+            }
+        });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            
+            for (let touch of e.changedTouches) {
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                if (this.movementTouch && touch.identifier === this.movementTouch.id) {
+                    this.movementTouch.currentX = touchX;
+                    this.movementTouch.currentY = touchY;
+                } else if (this.aimTouch && touch.identifier === this.aimTouch.id) {
+                    this.aimTouch.x = touchX;
+                    this.aimTouch.y = touchY;
+                    this.mouse.x = touchX;
+                    this.mouse.y = touchY;
+                }
+            }
+        });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            
+            for (let touch of e.changedTouches) {
+                if (this.movementTouch && touch.identifier === this.movementTouch.id) {
+                    this.movementTouch = null;
+                } else if (this.aimTouch && touch.identifier === this.aimTouch.id) {
+                    // Handle shooting on touch end
+                    if (this.player) {
+                        const projectiles = this.player.releaseCharge(this.aimTouch.x, this.aimTouch.y);
+                        if (projectiles.length === 0) {
+                            const shots = this.player.shoot(this.aimTouch.x, this.aimTouch.y);
+                            this.projectiles.push(...shots);
+                        } else {
+                            this.projectiles.push(...projectiles);
+                            this.addScreenShake(5);
+                        }
+                    }
+                    this.aimTouch = null;
+                    this.mouse.down = false;
+                    this.dragStart = null;
+                }
+            }
+        });
+
+        this.canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                if (this.movementTouch && touch.identifier === this.movementTouch.id) {
+                    this.movementTouch = null;
+                } else if (this.aimTouch && touch.identifier === this.aimTouch.id) {
+                    this.aimTouch = null;
+                    this.mouse.down = false;
+                }
+            }
+        });
     }
 
     setupUI() {
@@ -1050,6 +1191,7 @@ class Game {
         this.powerups = [];
         this.particles = [];
         this.damageNumbers = [];
+        this.powerupNotifications = [];
         this.score = 0;
         this.enemiesDefeated = 0;
         this.timeElapsed = 0;
@@ -1169,7 +1311,7 @@ class Game {
     }
 
     spawnPowerup() {
-        const types = ['speed', 'rapid', 'shield', 'multishot', 'slowmo', 'magnet'];
+        const types = ['speed', 'rapid', 'shield', 'multishot', 'slowmo', 'magnet', 'health'];
         const type = types[Math.floor(Math.random() * types.length)];
         const x = 50 + Math.random() * (CONFIG.canvas.width - 100);
         const y = 50 + Math.random() * (CONFIG.canvas.height - 100);
@@ -1184,8 +1326,23 @@ class Game {
         const iterations = this.player.powerups.has('slowmo') ? 0.5 : 1;
         
         for (let iter = 0; iter < iterations; iter++) {
+            // Calculate touch movement vector
+            let touchMovement = null;
+            if (this.movementTouch) {
+                const dx = this.movementTouch.currentX - this.movementTouch.startX;
+                const dy = this.movementTouch.currentY - this.movementTouch.startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) { // Dead zone
+                    touchMovement = {
+                        x: dx / Math.max(distance, 50), // Normalize with max sensitivity
+                        y: dy / Math.max(distance, 50)
+                    };
+                }
+            }
+            
             // Update player
-            this.player.move(this.keys);
+            this.player.move(this.keys, touchMovement);
 
             // Check combo timeout
             if (Date.now() - this.player.lastKillTime > CONFIG.combo.timeout) {
@@ -1350,9 +1507,18 @@ class Game {
                 )) {
                     powerup.active = false;
                     
+                    // Show notification
+                    this.powerupNotifications.push(new PowerupNotification(
+                        powerup.data.name,
+                        powerup.data.color
+                    ));
+                    
                     // Apply powerup effect
                     if (powerup.type === 'shield') {
                         this.player.shieldHealth = 3;
+                    } else if (powerup.type === 'health') {
+                        // Restore 2 HP, but don't exceed max health
+                        this.player.health = Math.min(this.player.health + 2, this.player.maxHealth);
                     } else {
                         this.player.powerups.add(powerup.type);
                         setTimeout(() => {
@@ -1369,6 +1535,7 @@ class Game {
             // Update particles
             this.particles.forEach(p => p.update());
             this.damageNumbers.forEach(d => d.update());
+            this.powerupNotifications.forEach(n => n.update());
 
             // Update screen shake
             if (this.screenShake > 0) this.screenShake *= 0.9;
@@ -1381,6 +1548,7 @@ class Game {
             this.powerups = this.powerups.filter(p => p.active);
             this.particles = this.particles.filter(p => p.active);
             this.damageNumbers = this.damageNumbers.filter(d => d.active);
+            this.powerupNotifications = this.powerupNotifications.filter(n => n.active);
         }
     }
 
@@ -1440,6 +1608,9 @@ class Game {
         // Draw damage numbers
         this.damageNumbers.forEach(dmg => dmg.draw(this.ctx));
 
+        // Draw powerup notifications
+        this.powerupNotifications.forEach(notification => notification.draw(this.ctx));
+
         // Draw combo indicator
         if (this.player && this.player.combo > 1) {
             this.ctx.fillStyle = '#ffd700';
@@ -1498,6 +1669,32 @@ class Game {
             this.ctx.lineWidth = 3;
             this.ctx.beginPath();
             this.ctx.arc(this.mouse.x, this.mouse.y, 20, 0, Math.PI * 2 * chargePercent);
+            this.ctx.stroke();
+        }
+
+        // Draw touch controls visualization
+        if (this.movementTouch) {
+            // Draw joystick base
+            this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(this.movementTouch.startX, this.movementTouch.startY, 50, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+            
+            // Draw joystick knob
+            this.ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+            this.ctx.beginPath();
+            this.ctx.arc(this.movementTouch.currentX, this.movementTouch.currentY, 25, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw line from base to knob
+            this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.movementTouch.startX, this.movementTouch.startY);
+            this.ctx.lineTo(this.movementTouch.currentX, this.movementTouch.currentY);
             this.ctx.stroke();
         }
 

@@ -9,6 +9,10 @@ body {
     background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
     color: #fff;
     overflow: hidden;
+    cursor: default;
+}
+
+#game-screen {
     cursor: none;
 }
 
@@ -321,9 +325,11 @@ body {
 /* Game Screen */
 #game-screen {
     background: transparent;
+    cursor: none;
 }
 
 #game-canvas {
+    cursor: crosshair;
     display: block;
     background: radial-gradient(circle at center, rgba(0, 20, 40, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%);
     border: 3px solid #00ffff;
